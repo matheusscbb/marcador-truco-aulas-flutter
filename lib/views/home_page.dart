@@ -7,6 +7,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _controllerName = TextEditingController();
   var _playerOne = Player(name: "Nós", score: 0, victories: 0);
   var _playerTwo = Player(name: "Eles", score: 0, victories: 0);
 
@@ -50,7 +51,7 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: Container(padding: EdgeInsets.all(20.0), child: _showPlayers()),
+      body: Container(padding: EdgeInsets.all(20.0), child: _showTest()),
     );
   }
 
@@ -61,7 +62,12 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          _showPlayerName(player.name),
+          _showPlayerName(
+            player,
+            onTap: () {
+              _changeName(player);
+            }
+          ),
           _showPlayerScore(player.score),
           _showPlayerVictories(player.victories),
           _showScoreButtons(player),
@@ -82,13 +88,40 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _showPlayerName(String name) {
-    return Text(
-      name.toUpperCase(),
-      style: TextStyle(
+  Widget _showTest() {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        _showResetScore(),
+        _showPlayers()
+      ],
+    );
+  }
+
+   Widget _showResetScore() {
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        _buildResetButton()
+      ],
+    );
+  }
+
+  Widget _showPlayerName(Player player, {Function onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        player.name.toUpperCase(),
+        style: TextStyle(
           fontSize: 22.0,
           fontWeight: FontWeight.w500,
-          color: Colors.deepOrange),
+          color: Colors.deepOrange
+        ),
+      )
     );
   }
 
@@ -128,6 +161,60 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildResetButton(
+    {String text, double size = 52.0, Color color, Function onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: RaisedButton(
+        color: Colors.deepOrange[400],
+        onPressed: () {
+          _resetPlayers(resetVictories:  false);
+        },
+        child: Text('ZERAR RODADA', style: TextStyle(color: Colors.white)),
+      )
+    );
+  }
+
+  _changeName(Player player) {
+    _controllerName.text = player.name;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Alterar nome'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                  controller: _controllerName,
+                  decoration: InputDecoration(labelText: 'Nome'),
+                  autofocus: true),
+            ],
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            FlatButton(
+              child: Text('Salvar'),
+              onPressed: () {
+                setState(() {
+                  player.name = _controllerName.value.text;
+                });
+                Navigator.of(context).pop(player);
+              },
+            ),
+          ],
+        );
+      }
+    );
+  }
+
   Widget _showScoreButtons(Player player) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -138,7 +225,8 @@ class _HomePageState extends State<HomePage> {
           color: Colors.black.withOpacity(0.1),
           onTap: () {
             setState(() {
-              player.score--;
+              if (player.score != 0)
+                player.score--;
             });
           },
         ),
@@ -147,7 +235,10 @@ class _HomePageState extends State<HomePage> {
           color: Colors.deepOrangeAccent,
           onTap: () {
             setState(() {
-              player.score++;
+              if (player.score != 12)
+                player.score++;
+                if (_playerOne.score == 11 && _playerTwo.score == 11)
+                  _ironHand();
             });
 
             if (player.score == 12) {
@@ -173,10 +264,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _ironHand() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Mão de Onze'),
+          content: Text('Parabéns, Vocês são feras estão para decidir a partida devido a isso não devem olhar suas cartas'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("Confirmar"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showDialog(
       {String title, String message, Function confirm, Function cancel}) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),
